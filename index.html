@@ -19,10 +19,76 @@ th, td {
 <body>
 <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
 <script src="http://dglittle.github.io/gl519/index.js"></script>
+<script src="http://dglittle.github.io/gl519/random.js"></script>
+<script src="utils.js"></script>
+<script src="wordcloud2.js"></script>
 <script>
 
+tau = Math.PI * 2
+
 $(function () {
-	$('body').append($('<div style="width:100%;height:100%;background:orange"/>').append($('<div style="width:50%;height:50%;background:pink"/>').text('hello inside!')))
+	var w = $(window).width()
+	var h = $(window).height()
+
+	var senses = ['Seeing', 'Hearing', 'Thinking', 'Feeling', 'Smelling', 'Tasting']
+
+	var oldRandom = Math.random
+	Math.randomSeed(5005)
+	senses = _.object(_.map(senses, function (s) {
+		var color = _.shuffle([200, _.randomInt(128, 200), 128])
+		var highlight = _.map(color, function (x) { return Math.round(_.lerp(128, 160, 200, 255, x)) })
+		function rgb(c) {
+			return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'
+		}
+		return [s, [rgb(color), rgb(highlight)]]
+	}))
+	Math.random = oldRandom
+
+	function drawButton(text) {
+		var d = $('<div/>').css({
+				float : 'left',
+				width : Math.floor(w / 2),
+				height : Math.floor(h / 4)
+			})
+		d.append(center($('<div style="font-size:x-large;font-weight:bold"/>').text(text)))
+		return d
+	}
+
+	var senseCounts = {}
+	function drawSenseButton(sense, colors) {
+		var d = drawButton(sense).css('background', colors[0])
+		d.mousedown(function () {
+			_.bagAdd(senseCounts, sense)
+			d.css('background', colors[1])
+			setTimeout(function () {
+				d.css('background', colors[0])
+			}, 100)
+		})
+		return d
+	}
+
+	$('body').append(drawButton(''))
+	$('body').append(drawButton('Done').click(function () {
+		var c = $('<canvas/>').attr('width', w).attr('height', h)
+		$('body').empty().append(c)
+
+		var big = Math.min(w, h) / 5
+		var min = _.min(senseCounts)
+		var max = _.max(senseCounts)
+		senseCounts = _.map(senseCounts, function (x) {
+			return _.lerp(0, 0, max, big, x)
+		})
+		WordCloud(c[0], {
+			list: _.pairs(senseCounts),
+			minRotation: tau / 4,
+			maxRotation: tau / 4,
+			rotateRatio: .5
+		})
+	}))
+	_.each(senses, function (colors, sense) {
+		$('body').append(drawSenseButton(sense, colors))
+	})
+
 })
 
 </script>

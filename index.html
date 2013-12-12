@@ -25,7 +25,8 @@ th, td {
 <script>
 
 // todo:
-// - change name to 'thereis'
+// - make the current version work like before
+// - create new repo call 'thereis'
 // - host this on heroku
 // - add sounds for senses
 // - make tilting screen not make it tilt
@@ -68,14 +69,15 @@ function initTouch() {
 	}, false)
 }
 
-function drawThing() {
+function drawSenseInputScreen() {
 	var w = $(window).width()
 	var h = $(window).height()
-	var size = Math.min(w, h)
-	var d = $('<div/>')
-	d.css({
-		width : size,
-		height : size,
+	var squareSize = Math.min(w, h)
+
+	var square = $('<div/>')
+	square.css({
+		width : squareSize,
+		height : squareSize,
 		background : 'white'
 	})
 
@@ -136,69 +138,15 @@ function drawThing() {
 		if (s) return drawButton(s, senseColors[s])
 		return $('<div/>')
 	})
-	d.append(grid([x.slice(0, 3), x.slice(3, 6), x.slice(6, 9)]))
+	square.append(grid([x.slice(0, 3), x.slice(3, 6), x.slice(6, 9)]))
 
-	return d
-}
+	var d = $('<div/>')
+	d.append($('<div style="width:100%;height:' + Math.floor((h - squareSize) / 2) + '"/>'))
+	d.append(square)
 
-function drawSenseInputScreen() {
-	var w = $(window).width()
-	var h = $(window).height()
-
-	var senses = ['Seeing', 'Hearing', 'Thinking', 'Feeling', 'Smelling', 'Tasting']
-
-	var oldRandom = Math.random
-	Math.randomSeed(5005)
-	senses = _.object(_.map(senses, function (s) {
-		var color = _.shuffle([200, _.randomInt(128, 200), 128])
-		var highlight = _.map(color, function (x) { return Math.round(_.lerp(128, 160, 200, 255, x)) })
-		function rgb(c) {
-			return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'
-		}
-		return [s, [rgb(color), rgb(highlight)]]
-	}))
-	Math.random = oldRandom
-
-	var buttons = []
-	function drawButton(text) {
-		var d = $('<div/>').css({
-				float : 'left',
-				width : Math.floor(w / 2),
-				height : Math.floor(h / 4)
-			})
-		d.append(center($('<div style="font-size:x-large;font-weight:bold"/>').text(text)))
-		buttons.push(d)
-		return d
-	}
-
-	ontouch = function (tx, ty) {
-	    _.each(buttons, function (b) {
-	    	var pos = b.offset()
-	    	var bx = pos.left
-	    	var by = pos.top
-	    	if (tx >= bx && tx < bx + b.width() && ty >= by && ty < by + b.height()) {
-	    		if (b.ontouch) b.ontouch()
-	    	}
-	    })
-	}
-
-	var senseCounts = {}
-	function drawSenseButton(sense, colors) {
-		var d = drawButton(sense).css('background', colors[0])
-		d.ontouch = function () {
-			_.bagAdd(senseCounts, sense)
-			d.css('background', colors[1])
-			setTimeout(function () {
-				d.css('background', colors[0])
-			}, 100)
-		}
-		return d
-	}
-
-	var d = $('<div style="width:100%;height:100%"/>')
-
-	d.append(drawButton(''))
-	var done = drawButton('Done')
+	var done = center($('<div style="font-size:x-large;font-weight:bold"/>').text('done')).css('height', Math.ceil((h - squareSize) / 2))
+	buttons.push(done)
+	d.append(done)
 	done.ontouch = function () {
 		var c = $('<canvas/>').attr('width', w).attr('height', h)
 		$('body').empty().append(c)
@@ -219,27 +167,13 @@ function drawSenseInputScreen() {
 			rotateRatio: .5
 		})
 	}
-	d.append(done)
-	_.each(senses, function (colors, sense) {
-		d.append(drawSenseButton(sense, colors))
-	})
+
 	return d
 }
 
 $(function () {
 	initTouch()
-	$('body').append(drawThing())
-
-	// ontouch = null
-	// document.addEventListener('touchstart', function(e) {
-	//     e.preventDefault()
-	//     var touch = e.touches[0]
-	//     var tx = touch.pageX
-	//     var ty = touch.pageY
-	//     if (ontouch) ontouch(tx, ty)
-	// }, false)
-
-	// $('body').append(drawSenseInputScreen())
+	$('body').append(drawSenseInputScreen())
 })
 
 </script>

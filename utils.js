@@ -1,4 +1,28 @@
 
+function grid(rows) {
+    var t = []
+    t.push('<table style="width:100%;height:100%">')
+    _.each(rows, function (row, y) {
+        t.push('<tr height="33.33%">')
+        _.each(row, function (cell, x) {
+            var c = 'x' + x + 'y' + y
+            t.push('<td class="' + c + '" width="33.33%"/>')
+        })
+        t.push('</tr>')
+    })
+    t.push('</table>')
+    t = $(t.join(''))
+
+    _.each(rows, function (row, y) {
+        _.each(row, function (cell, x) {
+            var c = 'x' + x + 'y' + y
+            t.find('.' + c).append(cell)
+        })
+    })
+
+    return t
+}
+
 function center(me) {
     var t = $('<table style="width:100%;height:100%"><tr><td valign="center" align="center"></td></tr></table>')
     t.find('td').append(me)

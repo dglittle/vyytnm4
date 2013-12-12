@@ -24,7 +24,122 @@ th, td {
 <script src="wordcloud2.js"></script>
 <script>
 
+// todo:
+// - change name to 'thereis'
+// - host this on heroku
+// - add sounds for senses
+// - make tilting screen not make it tilt
+// - add 'done' button to show word map
+// - make showing wordmap upload to server
+// - add text input to add a generic word
+// - add edit button to edit words (save on server)
+// - make seeing on computer show old word clouds
+
 tau = Math.PI * 2
+
+ontouch = null
+function initTouch() {
+	var touchstart = null
+	var touchend = null
+	document.addEventListener('touchstart', function(e) {
+	    e.preventDefault()
+	    var touch = e.touches[0]
+	    var tx = touch.pageX
+	    var ty = touch.pageY
+	    touchstart = { x : tx, y : ty }
+	    touchend = { x : tx, y : ty }
+	}, false)
+	document.addEventListener('touchmove', function(e) {
+	    e.preventDefault()
+	    var touch = e.touches[0]
+	    var tx = touch.pageX
+	    var ty = touch.pageY
+	    touchend = { x : tx, y : ty }
+	}, false)
+	document.addEventListener('touchend', function(e) {
+	    e.preventDefault()
+	    var dx = touchend.x - touchstart.x
+	    var dy = touchend.y - touchstart.y
+	    var dist = Math.sqrt(dx * dx + dy * dy)
+	    var angle = Math.atan2(-dy, dx)
+	    if (angle < 0) angle = tau + angle
+	    angle = Math.floor((angle + tau/16) / (tau/8)) % 8
+	    if (ontouch) ontouch(touchend.x, touchend.y, dist < 6 ? -1 : angle)
+	}, false)
+}
+
+function drawThing() {
+	var w = $(window).width()
+	var h = $(window).height()
+	var size = Math.min(w, h)
+	var d = $('<div/>')
+	d.css({
+		width : size,
+		height : size,
+		background : 'white'
+	})
+
+	var senses = [
+		'other', 'seeing', 'other',
+		'thinking', '', 'hearing',
+		'tasting', 'feeling', 'smelling']
+	var senseCounts = {}
+
+	var oldRandom = Math.random
+	Math.randomSeed(5006)
+	var senseColors = {}
+	_.each(senses, function (s) {
+		var color = _.shuffle([200, _.randomInt(128, 200), 128])
+		var highlight = _.map(color, function (x) { return Math.round(_.lerp(128, 160, 200, 255, x)) })
+		function rgb(c) {
+			return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'
+		}
+		senseColors[s] = [rgb(color), rgb(highlight)]
+	})
+	Math.random = oldRandom
+
+	var buttons = []
+	function drawButton(text, colors) {
+		var d = center($('<div style="font-size:x-large;font-weight:bold"/>').text(text))
+		if (text) {
+			d.css('background', colors[0])
+			d.ontouch = function () {
+				_.bagAdd(senseCounts, text)
+				d.css('background', colors[1])
+				setTimeout(function () {
+					d.css('background', colors[0])
+				}, 100)
+			}
+		}
+		buttons.push(d)
+		return d
+	}
+
+	ontouch = function (tx, ty, dir) {
+		if (dir < 0) {
+		    _.each(buttons, function (b) {
+		    	var pos = b.offset()
+		    	var bx = pos.left
+		    	var by = pos.top
+		    	if (tx >= bx && tx < bx + b.width() && ty >= by && ty < by + b.height()) {
+		    		if (b.ontouch) b.ontouch()
+		    	}
+		    })
+		} else {
+			var mapper = [5, 2, 1, 0, 3, 6, 7, 8]
+			var b = buttons[mapper[dir]]
+    		if (b.ontouch) b.ontouch()
+		}
+	}
+
+	var x = _.map(senses, function (s) {
+		if (s) return drawButton(s, senseColors[s])
+		return $('<div/>')
+	})
+	d.append(grid([x.slice(0, 3), x.slice(3, 6), x.slice(6, 9)]))
+
+	return d
+}
 
 function drawSenseInputScreen() {
 	var w = $(window).width()
@@ -112,16 +227,19 @@ function drawSenseInputScreen() {
 }
 
 $(function () {
-	ontouch = null
-	document.addEventListener('touchstart', function(e) {
-	    e.preventDefault()
-	    var touch = e.touches[0]
-	    var tx = touch.pageX
-	    var ty = touch.pageY
-	    if (ontouch) ontouch(tx, ty)
-	}, false)
+	initTouch()
+	$('body').append(drawThing())
 
-	$('body').append(drawSenseInputScreen())
+	// ontouch = null
+	// document.addEventListener('touchstart', function(e) {
+	//     e.preventDefault()
+	//     var touch = e.touches[0]
+	//     var tx = touch.pageX
+	//     var ty = touch.pageY
+	//     if (ontouch) ontouch(tx, ty)
+	// }, false)
+
+	// $('body').append(drawSenseInputScreen())
 })
 
 </script>

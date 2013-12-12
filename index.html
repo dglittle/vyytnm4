@@ -26,7 +26,7 @@ th, td {
 
 tau = Math.PI * 2
 
-$(function () {
+function drawSenseInputScreen() {
 	var w = $(window).width()
 	var h = $(window).height()
 
@@ -56,11 +56,7 @@ $(function () {
 		return d
 	}
 
-	document.addEventListener('touchstart', function(e) {
-	    e.preventDefault()
-	    var touch = e.touches[0]
-	    var tx = touch.pageX
-	    var ty = touch.pageY
+	ontouch = function (tx, ty) {
 	    _.each(buttons, function (b) {
 	    	var pos = b.offset()
 	    	var bx = pos.left
@@ -69,7 +65,7 @@ $(function () {
 	    		if (b.ontouch) b.ontouch()
 	    	}
 	    })
-	}, false)
+	}
 
 	var senseCounts = {}
 	function drawSenseButton(sense, colors) {
@@ -84,11 +80,16 @@ $(function () {
 		return d
 	}
 
-	$('body').append(drawButton(''))
+	var d = $('<div style="width:100%;height:100%"/>')
+
+	d.append(drawButton(''))
 	var done = drawButton('Done')
 	done.ontouch = function () {
 		var c = $('<canvas/>').attr('width', w).attr('height', h)
 		$('body').empty().append(c)
+		ontouch = function () {
+			$('body').empty().append(drawSenseInputScreen())
+		}
 
 		var big = Math.min(w, h) / 5
 		var min = _.min(senseCounts)
@@ -103,11 +104,24 @@ $(function () {
 			rotateRatio: .5
 		})
 	}
-	$('body').append(done)
+	d.append(done)
 	_.each(senses, function (colors, sense) {
-		$('body').append(drawSenseButton(sense, colors))
+		d.append(drawSenseButton(sense, colors))
 	})
+	return d
+}
 
+$(function () {
+	ontouch = null
+	document.addEventListener('touchstart', function(e) {
+	    e.preventDefault()
+	    var touch = e.touches[0]
+	    var tx = touch.pageX
+	    var ty = touch.pageY
+	    if (ontouch) ontouch(tx, ty)
+	}, false)
+
+	$('body').append(drawSenseInputScreen())
 })
 
 </script>

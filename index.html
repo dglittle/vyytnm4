@@ -44,6 +44,7 @@ $(function () {
 	}))
 	Math.random = oldRandom
 
+	var buttons = []
 	function drawButton(text) {
 		var d = $('<div/>').css({
 				float : 'left',
@@ -51,24 +52,41 @@ $(function () {
 				height : Math.floor(h / 4)
 			})
 		d.append(center($('<div style="font-size:x-large;font-weight:bold"/>').text(text)))
+		buttons.push(d)
 		return d
 	}
+
+	document.addEventListener('touchstart', function(e) {
+	    e.preventDefault()
+	    var touch = e.touches[0]
+	    var tx = touch.pageX
+	    var ty = touch.pageY
+	    _.each(buttons, function (b) {
+	    	var pos = b.offset()
+	    	var bx = pos.left
+	    	var by = pos.top
+	    	if (tx >= bx && tx < bx + b.width() && ty >= by && ty < by + b.height()) {
+	    		if (b.ontouch) b.ontouch()
+	    	}
+	    })
+	}, false)
 
 	var senseCounts = {}
 	function drawSenseButton(sense, colors) {
 		var d = drawButton(sense).css('background', colors[0])
-		d.mousedown(function () {
+		d.ontouch = function () {
 			_.bagAdd(senseCounts, sense)
 			d.css('background', colors[1])
 			setTimeout(function () {
 				d.css('background', colors[0])
 			}, 100)
-		})
+		}
 		return d
 	}
 
 	$('body').append(drawButton(''))
-	$('body').append(drawButton('Done').click(function () {
+	var done = drawButton('Done')
+	done.ontouch = function () {
 		var c = $('<canvas/>').attr('width', w).attr('height', h)
 		$('body').empty().append(c)
 
@@ -84,7 +102,8 @@ $(function () {
 			maxRotation: tau / 4,
 			rotateRatio: .5
 		})
-	}))
+	}
+	$('body').append(done)
 	_.each(senses, function (colors, sense) {
 		$('body').append(drawSenseButton(sense, colors))
 	})
